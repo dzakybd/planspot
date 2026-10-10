@@ -1,0 +1,27 @@
+[project]
+name = "planspot"
+version = "0.1.0"
+description = "One-shot symbol spotting on construction and CAD drawings with frozen DINOv2 features"
+authors = [
+    { name = "Dzaky Zakiyal Fawwaz", email = "dzakybd@gmail.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "gradio>=6.30.0",
+    "huggingface-hub>=2.2.0",
+    "matplotlib>=3.11.2",
+    "numpy>=2.4.6",
+    "opencv-python-headless>=5.0.0.93",
+    "peft>=0.21.2",
+    "pillow>=12.3.0",
+    "scikit-image>=0.26.0",
+    "scipy>=1.17.1",
+    "torch>=2.14.1",
+    "torchvision>=0.29.1",
+    "tqdm>=4.70.1",
+    "transformers>=5.19.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.23,<0.13.0"]
+build-backend = "uv_build"

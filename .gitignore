@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+results/*.episodes.json
+.DS_Store
+*.pt
+results/walls/*.tiles.json

@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PlanSpot · results</title>
+<style>
+:root {
+  --bg: #f7f7f5; --panel: #ffffff; --ink: #1d2433; --muted: #5d6677; --line: #dfe2e8;
+  --accent: #2563eb; --good: #15803d; --bad: #dc2626; --warn: #b45309;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0f1218; --panel: #171b23; --ink: #e6e9ef; --muted: #9aa3b2; --line: #2a303b;
+    --accent: #60a5fa; --good: #4ade80; --bad: #f87171; --warn: #fbbf24; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 1080px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font-size: 28px; margin: 0 0 6px; letter-spacing: -.01em; }
+h2 { font-size: 20px; margin: 36px 0 10px; }
+p.lede { color: var(--muted); margin: 0 0 18px; max-width: 760px; }
+a { color: var(--accent); }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.controls { display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: center; margin-bottom: 12px; }
+.controls label { color: var(--muted); font-size: 14px; }
+select, input[type=range] { accent-color: var(--accent); }
+select { background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; font: inherit; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { background: transparent; color: var(--ink); border: 0; padding: 6px 12px; font: inherit; cursor: pointer; }
+.seg button.on { background: var(--accent); color: #fff; }
+.viewer { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 16px; }
+@media (max-width: 760px) { .viewer { grid-template-columns: 1fr; } }
+canvas { width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--line); background: #fff; display: block; }
+.stats div { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--line); }
+.stats b { font-variant-numeric: tabular-nums; }
+.legend { font-size: 13px; color: var(--muted); margin-top: 10px; }
+.legend span { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin: 0 4px 0 10px; }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { color: var(--muted); font-weight: 600; }
+td.num { font-variant-numeric: tabular-nums; }
+tr.best td { font-weight: 650; }
+.note { color: var(--muted); font-size: 13.5px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>PlanSpot</h1>
+  <p class="lede">One-shot symbol spotting and thin-structure segmentation on CAD drawings with DINOv2. This page shows precomputed results; every box below was produced by the code in <a href="https://github.com/dzakybd/planspot">github.com/dzakybd/planspot</a>, and the threshold slider re-scores them live in your browser.</p>
+
+  <h2>Spotting viewer</h2>
+  <div class="panel">
+    <div class="controls">
+      <label>Drawing <select id="item"></select></label>
+      <span class="seg" id="method"><button data-m="ncc">Pixel NCC</button><button data-m="dino">DINOv2</button></span>
+      <label>Score floor <input id="thr" type="range" min="0.3" max="0.99" step="0.01"> <b id="thrv"></b></label>
+      <label><input id="adp" type="checkbox"> Adaptive cut (largest score gap)</label>
+    </div>
+    <div class="viewer">
+      <canvas id="cv" width="1000" height="1000" aria-label="Drawing with detections"></canvas>
+      <div>
+        <div class="stats" id="stats"></div>
+        <div class="legend"><span style="background:#2563eb"></span>exemplar<span style="background:#16a34a"></span>correct<span style="background:#dc2626"></span>false positive<span style="background:#f59e0b"></span>missed</div>
+        <p class="note">Correct = IoU ≥ 0.5 with an unmatched ground-truth box. Floor and adaptive settings start at the values tuned on the validation drawings. With adaptive cut on, each query keeps the matches above the largest drop in its own sorted scores. It wins on the benchmark overall, but it fails on ties: on drawing 1, identical seats score 0.99–1.00 and it cuts between them. Toggle it to see.</p>
+      </div>
+    </div>
+  </div>
+
+  <h2>Phase 1: one-shot spotting benchmark</h2>
+  <div class="panel table-wrap"><table id="spot"></table>
+    <p class="note" id="spotnote"></p></div>
+
+  <h2>Phase 2: wall segmentation ablation</h2>
+  <div class="panel table-wrap"><table id="walls"></table>
+    <p class="note">F1 with 2 px tolerance, clDice (topology), and mean absolute error in the number of connected wall pieces per tile. Held-out drawings only.</p></div>
+
+  <p class="note">Data: FloorPlanCAD (Fan et al., ICCV 2021), CC BY-NC 4.0, via the Voxel51 Hugging Face export. Non-commercial research demo. Splits are by source drawing.</p>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+let D, item = 0, method = "dino";
+const iou = (a, b) => {
+  const ix = Math.max(0, Math.min(a[2], b[2]) - Math.max(a[0], b[0]));
+  const iy = Math.max(0, Math.min(a[3], b[3]) - Math.max(a[1], b[1]));
+  const inter = ix * iy, u = (a[2]-a[0])*(a[3]-a[1]) + (b[2]-b[0])*(b[3]-b[1]) - inter;
+  return u > 0 ? inter / u : 0;
+};
+const fmt = (x) => x.toFixed(3);
+const TAG = { dino: "dino-dinov2-small-x2", ncc: "ncc" };
+function gapCut(scores, a, b) {
+  const above = scores.filter(x => x >= a).sort((x, y) => y - x);
+  if (above.length < 2) return a;
+  let k = 0, g = -1;
+  for (let i = 0; i < above.length - 1; i++) { const d = above[i] - above[i + 1]; if (d > g) { g = d; k = i; } }
+  return g >= b ? above[k] : above[above.length - 1];
+}
+const imgs = {};
+
+function draw() {
+  const it = D.items[item], floor = +$("thr").value;
+  const thr = $("adp").checked ? gapCut(it.methods[method].map(d => d.score), floor, D.adaptive[TAG[method]].gap.params[1]) : floor;
+  $("thrv").textContent = floor.toFixed(2) + ($("adp").checked ? ` → cut at ${thr.toFixed(2)}` : "");
+  const dets = it.methods[method].filter(d => d.score >= thr).sort((a, b) => b.score - a.score);
+  const used = new Array(it.gt.length).fill(false);
+  const tags = dets.map(d => {
+    let best = 0.5, bi = -1;
+    it.gt.forEach((g, i) => { if (!used[i]) { const v = iou(d.box, g); if (v >= best) { best = v; bi = i; } } });
+    if (bi >= 0) used[bi] = true;
+    return bi >= 0;
+  });
+  const cv = $("cv"), ctx = cv.getContext("2d"), im = imgs[it.image];
+  cv.width = im.naturalWidth; cv.height = im.naturalHeight;
+  ctx.drawImage(im, 0, 0);
+  const rect = (b, c, w) => { ctx.strokeStyle = c; ctx.lineWidth = w; ctx.strokeRect(b[0], b[1], b[2]-b[0], b[3]-b[1]); };
+  it.gt.forEach((g, i) => { if (!used[i]) rect(g, "#f59e0b", 3); });
+  dets.forEach((d, i) => rect(d.box, tags[i] ? "#16a34a" : "#dc2626", 3));
+  rect(it.exemplar, "#2563eb", 4);
+  const tp = tags.filter(Boolean).length, fp = dets.length - tp, fn = it.gt.length - tp;
+  const p = dets.length ? tp / dets.length : 0, r = it.gt.length ? tp / it.gt.length : 0, f1 = p + r ? 2*p*r/(p+r) : 0;
+  $("stats").innerHTML = [["Symbol", it.name], ["Ground truth (excl. exemplar)", it.gt.length], ["Predicted", dets.length],
+    ["Correct", tp], ["False positives", fp], ["Missed", fn], ["Precision", fmt(p)], ["Recall", fmt(r)], ["F1", fmt(f1)]]
+    .map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join("");
+}
+
+function setMethod(m) {
+  method = m;
+  document.querySelectorAll("#method button").forEach(b => b.classList.toggle("on", b.dataset.m === m));
+  $("thr").value = $("adp").checked ? D.adaptive[TAG[m]].gap.params[0] : D.spotting[m].threshold_from_val;
+  draw();
+}
+
+function tables() {
+  const rows = Object.entries(D.spotting).map(([k, r]) => [k === "dino" ? "DINOv2-S feature matching (2x, tiled, 8 poses)" : "Pixel NCC template matching (8 poses)", r]);
+  const sizes = Object.keys(rows[0][1].test_by_size);
+  $("spot").innerHTML = `<tr><th>Method</th><th>Thr (val)</th><th>P</th><th>R</th><th>F1</th>${sizes.map(s => `<th>F1 ${s}</th>`).join("")}<th>Count MAPE</th></tr>` +
+    rows.map(([n, r]) => `<tr><td>${n}</td><td class="num">${r.threshold_from_val.toFixed(2)}</td><td class="num">${fmt(r.test.precision)}</td><td class="num">${fmt(r.test.recall)}</td><td class="num">${fmt(r.test.f1)}</td>${sizes.map(s => `<td class="num">${fmt(r.test_by_size[s].f1)}</td>`).join("")}<td class="num">${fmt(r.test.count_mape)}</td></tr>`).join("");
+  const A = D.adaptive;
+  $("spot").innerHTML += Object.entries(TAG).map(([m, tag]) => { const r = A[tag].gap;
+    return `<tr class="${r.f1 >= Math.max(A.ncc.gap.f1, A[TAG.dino].gap.f1) ? "best" : ""}"><td>${m === "dino" ? "DINOv2" : "Pixel NCC"} + adaptive gap cut</td><td class="num">≥ ${r.params[0].toFixed(2)}</td><td class="num">${fmt(r.precision)}</td><td class="num">${fmt(r.recall)}</td><td class="num">${fmt(r.f1)}</td>${sizes.map(() => "<td>–</td>").join("")}<td>–</td></tr>`; }).join("");
+  const t = rows[0][1].test;
+  $("spotnote").textContent = `Test split: ${t.episodes} episodes, ${t.instances} instances (DINO run). Episode = one drawing tile + one symbol class with ≥ 2 instances; the first instance is the exemplar. Both methods are scored on the same tiles; thresholds and adaptive parameters are tuned on separate validation drawings.`;
+  const W = Object.values(D.walls);
+  if (!W.length) { $("walls").innerHTML = "<tr><td>Ablation running; results will appear here.</td></tr>"; return; }
+  const names = { unet: "Pixel U-Net only", frozen: "+ frozen DINOv2", lora: "+ DINOv2 LoRA r=8", lora_cldice: "+ LoRA + clDice loss" };
+  const bw = Math.max(...W.map(r => r.f1_tol2px));
+  $("walls").innerHTML = "<tr><th>Variant</th><th>Trainable params</th><th>F1 (2 px)</th><th>Precision</th><th>Recall</th><th>clDice</th><th>Component count error</th></tr>" +
+    ["unet", "frozen", "lora", "lora_cldice"].filter(k => D.walls[k]).map(k => { const r = D.walls[k];
+      return `<tr class="${r.f1_tol2px === bw ? "best" : ""}"><td>${names[k]}</td><td class="num">${(r.trainable_params/1e3).toFixed(0)}K</td><td class="num">${fmt(r.f1_tol2px)}</td><td class="num">${fmt(r.precision)}</td><td class="num">${fmt(r.recall)}</td><td class="num">${fmt(r.cldice)}</td><td class="num">${r.component_count_error.toFixed(1)}</td></tr>`; }).join("");
+}
+
+fetch("data.json").then(r => r.json()).then(async (d) => {
+  D = d;
+  await Promise.all(D.items.map(it => new Promise(res => { const im = new Image(); im.onload = res; im.src = it.image; imgs[it.image] = im; })));
+  $("item").innerHTML = D.items.map((it, i) => `<option value="${i}">${i + 1}. ${it.name} (${it.gt.length + 1} instances)</option>`).join("");
+  $("item").onchange = (e) => { item = +e.target.value; draw(); };
+  $("thr").oninput = draw;
+  $("adp").onchange = () => setMethod(method);
+  document.querySelectorAll("#method button").forEach(b => b.onclick = () => setMethod(b.dataset.m));
+  tables();
+  // Open on the method with the best held-out F1 (adaptive cut), whichever it is.
+  setMethod(D.adaptive.ncc.gap.f1 >= D.adaptive[TAG.dino].gap.f1 ? "ncc" : "dino");
+});
+</script>
+</body>
+</html>

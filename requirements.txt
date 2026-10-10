@@ -1,0 +1,11 @@
+torch
+torchvision
+transformers
+peft
+opencv-python-headless
+scikit-image
+numpy
+pillow
+tqdm
+huggingface_hub
+gradio

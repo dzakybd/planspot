@@ -1,0 +1,60 @@
+{
+  "ncc": {
+    "global": {
+      "params": [
+        0.9,
+        0.0
+      ],
+      "precision": 0.502,
+      "recall": 0.434,
+      "f1": 0.466
+    },
+    "gap": {
+      "params": [
+        0.82,
+        0.01
+      ],
+      "precision": 0.805,
+      "recall": 0.423,
+      "f1": 0.555
+    },
+    "relative": {
+      "params": [
+        0.78,
+        0.98
+      ],
+      "precision": 0.649,
+      "recall": 0.377,
+      "f1": 0.476
+    }
+  },
+  "dino-dinov2-small-x2": {
+    "global": {
+      "params": [
+        0.82,
+        0.0
+      ],
+      "precision": 0.776,
+      "recall": 0.357,
+      "f1": 0.489
+    },
+    "gap": {
+      "params": [
+        0.7,
+        0.0
+      ],
+      "precision": 0.717,
+      "recall": 0.401,
+      "f1": 0.514
+    },
+    "relative": {
+      "params": [
+        0.7,
+        0.92
+      ],
+      "precision": 0.588,
+      "recall": 0.391,
+      "f1": 0.469
+    }
+  }
+}

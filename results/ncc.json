@@ -1,0 +1,201 @@
+{
+  "method": "ncc",
+  "threshold_from_val": 0.9,
+  "val": {
+    "precision": 0.4844961240310077,
+    "recall": 0.2900232018561485,
+    "f1": 0.36284470246734396,
+    "count_mape": 1.164917104769021,
+    "episodes": 336,
+    "instances": 862
+  },
+  "test": {
+    "precision": 0.5015166835187057,
+    "recall": 0.4343257443082312,
+    "f1": 0.4655091506335054,
+    "count_mape": 1.5926854506925112,
+    "episodes": 369,
+    "instances": 1142
+  },
+  "test_by_size": {
+    "small (<48 px)": {
+      "precision": 0.9794871794871794,
+      "recall": 0.6303630363036303,
+      "f1": 0.7670682730923694,
+      "count_mape": 0.6100261429435657,
+      "episodes": 29,
+      "instances": 303
+    },
+    "medium (48-96 px)": {
+      "precision": 0.29914529914529914,
+      "recall": 0.4057971014492754,
+      "f1": 0.34440344403444034,
+      "count_mape": 2.1816402116402114,
+      "episodes": 135,
+      "instances": 345
+    },
+    "large (>=96 px)": {
+      "precision": 0.5061349693251533,
+      "recall": 0.3340080971659919,
+      "f1": 0.40243902439024387,
+      "count_mape": 1.3438475345792418,
+      "episodes": 205,
+      "instances": 494
+    }
+  },
+  "test_by_class": {
+    "bath": {
+      "precision": 0.9090909090909091,
+      "recall": 0.17857142857142858,
+      "f1": 0.2985074626865672,
+      "count_mape": 0.7292768959435626,
+      "episodes": 27,
+      "instances": 56
+    },
+    "bath_tub": {
+      "precision": 1.0,
+      "recall": 0.2,
+      "f1": 0.33333333333333337,
+      "count_mape": 0.8,
+      "episodes": 5,
+      "instances": 5
+    },
+    "bed": {
+      "precision": 0.6415094339622641,
+      "recall": 0.40476190476190477,
+      "f1": 0.4963503649635036,
+      "count_mape": 0.6344086021505376,
+      "episodes": 31,
+      "instances": 84
+    },
+    "bedside_cupboard": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "count_mape": 1.0,
+      "episodes": 6,
+      "instances": 11
+    },
+    "chair": {
+      "precision": 0.9953703703703703,
+      "recall": 0.6677018633540373,
+      "f1": 0.7992565055762082,
+      "count_mape": 0.4344805466046068,
+      "episodes": 21,
+      "instances": 322
+    },
+    "class_31": {
+      "precision": 1.0,
+      "recall": 0.05555555555555555,
+      "f1": 0.10526315789473684,
+      "count_mape": 0.9583333333333333,
+      "episodes": 8,
+      "instances": 18
+    },
+    "double_door": {
+      "precision": 0.8409090909090909,
+      "recall": 0.17289719626168223,
+      "f1": 0.2868217054263566,
+      "count_mape": 0.7530487804878049,
+      "episodes": 82,
+      "instances": 214
+    },
+    "elevator": {
+      "precision": 1.0,
+      "recall": 0.42857142857142855,
+      "f1": 0.6,
+      "count_mape": 0.5555555555555555,
+      "episodes": 3,
+      "instances": 7
+    },
+    "escalator": {
+      "precision": 1.0,
+      "recall": 0.8888888888888888,
+      "f1": 0.9411764705882353,
+      "count_mape": 0.125,
+      "episodes": 8,
+      "instances": 9
+    },
+    "gas_stove": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "count_mape": 0.0,
+      "episodes": 2,
+      "instances": 2
+    },
+    "half_height_cabinet": {
+      "precision": 0.12023460410557185,
+      "recall": 0.7592592592592593,
+      "f1": 0.20759493670886076,
+      "count_mape": 9.139751552795031,
+      "episodes": 23,
+      "instances": 54
+    },
+    "refrigerator": {
+      "precision": 0.8666666666666667,
+      "recall": 0.52,
+      "f1": 0.65,
+      "count_mape": 0.5,
+      "episodes": 13,
+      "instances": 25
+    },
+    "sliding_door": {
+      "precision": 0.6363636363636364,
+      "recall": 0.14285714285714285,
+      "f1": 0.23333333333333328,
+      "count_mape": 0.9344262295081968,
+      "episodes": 61,
+      "instances": 98
+    },
+    "sofa": {
+      "precision": 1.0,
+      "recall": 0.16666666666666666,
+      "f1": 0.2857142857142857,
+      "count_mape": 0.8333333333333334,
+      "episodes": 3,
+      "instances": 6
+    },
+    "stair": {
+      "precision": 0.5384615384615384,
+      "recall": 0.40384615384615385,
+      "f1": 0.46153846153846156,
+      "count_mape": 0.9433962264150944,
+      "episodes": 53,
+      "instances": 104
+    },
+    "table": {
+      "precision": 1.0,
+      "recall": 0.6483516483516484,
+      "f1": 0.7866666666666667,
+      "count_mape": 0.4152597402597402,
+      "episodes": 8,
+      "instances": 91
+    },
+    "toilet": {
+      "precision": 1.0,
+      "recall": 0.375,
+      "f1": 0.5454545454545454,
+      "count_mape": 0.32,
+      "episodes": 5,
+      "instances": 16
+    },
+    "wardrobe": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "count_mape": 1.0,
+      "episodes": 5,
+      "instances": 8
+    },
+    "window": {
+      "precision": 0.0703125,
+      "recall": 0.75,
+      "f1": 0.12857142857142856,
+      "count_mape": 24.2,
+      "episodes": 5,
+      "instances": 12
+    }
+  },
+  "seconds_total": 164.0
+}
