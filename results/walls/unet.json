@@ -1,0 +1,14 @@
+{
+  "variant": "unet",
+  "trainable_params": 192289,
+  "steps": 1500,
+  "batch": 8,
+  "train_tiles": 1500,
+  "eval_tiles": 200,
+  "train_minutes": 15.1,
+  "f1_tol2px": 0.7041386035602477,
+  "precision": 0.6430186311573312,
+  "recall": 0.8580763236880244,
+  "cldice": 0.631128060549191,
+  "component_count_error": 47.005
+}

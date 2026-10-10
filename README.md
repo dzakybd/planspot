@@ -2,7 +2,7 @@
 
 **One-shot symbol spotting and thin-structure segmentation on CAD drawings, with DINOv2.**
 
-Box one symbol on a floor plan (a door, a fixture, a seat) and PlanSpot finds every other instance, in any of 8 orientations, without training for that symbol. Phase 2 (in progress) fine-tunes DINOv2 with LoRA to segment walls, which are 1–3 px strokes.
+Box one symbol on a floor plan (a door, a fixture, a seat) and PlanSpot finds every other instance, in any of 8 orientations, without training for that symbol. Phase 2 fine-tunes DINOv2 with LoRA to segment walls, which are 1–3 px strokes.
 
 - **Results viewer (static, no install):** https://huggingface.co/spaces/dzakybd/planspot
 - **Live demo (local):** `uv sync && uv run python app.py`
@@ -59,7 +59,7 @@ Test split: 369 episodes, 1,142 instances. Reproduce with `python -m planspot.ev
 - **Recall analysis** by failure type (clipped, variant, occluded).
 - A **learned matcher** (a small head trained on DINO features across classes) instead of raw cosine similarity.
 
-## Phase 2: wall segmentation with DINOv2 + LoRA (training now)
+## Phase 2: wall segmentation with DINOv2 + LoRA
 
 Walls in FloorPlanCAD are thin stroke outlines (about 2% of pixels). The model fuses **DINOv2 features** (context: "is this stroke a wall?") with a **light full-resolution pixel branch** (geometry: "exactly where?"), and decodes with skips to full resolution.
 
@@ -72,7 +72,21 @@ The ablation, on held-out drawings:
 | `lora` | + LoRA (r = 8) on DINOv2 attention `q_proj` / `v_proj` |
 | `lora_cldice` | + soft-clDice loss for connectivity (Shit et al., CVPR 2021) |
 
-Metrics: F1 with 2 px tolerance, clDice, and the error in the number of connected wall pieces per tile. Results will be added here when the runs finish.
+Metrics: F1 with 2 px tolerance, clDice, and the mean absolute error in the number of connected wall pieces per tile (lower = fewer broken or merged walls). Same budget for every variant: 1,500 steps, batch 8, 1,500 training tiles, 200 held-out tiles, one seed, M1 Pro.
+
+| Variant | Trainable params | F1 (2 px) | Precision | Recall | clDice | Component count error | Train time |
+|---|---|---|---|---|---|---|---|
+| `unet` | 192K | 0.704 | 0.643 | **0.858** | 0.631 | 47.0 | 15 min |
+| `frozen` | 254K | 0.731 | 0.735 | 0.798 | 0.664 | 31.0 | 13 min |
+| `lora` | 401K | **0.761** | **0.737** | 0.838 | **0.690** | 29.1 | 25 min |
+| `lora_cldice` | 401K | 0.748 | 0.722 | 0.831 | 0.684 | **22.3** | 25 min |
+
+What it shows:
+
+- **DINOv2 context helps thin structures.** Frozen features alone lift precision from 0.64 to 0.74: the pixel-only U-Net marks every stroke as wall, including furniture and dimension lines.
+- **LoRA beats frozen** by 3 F1 points and 2.6 clDice points for ~150K extra parameters. Adapting the attention to line drawings matters, not just the head.
+- **clDice trades a little F1 for topology.** It cuts the component count error by 23% (29.1 → 22.3), so fewer walls come out broken, while pixel F1 drops 1.3 points. For takeoff, where a broken wall becomes a wrong length, that is the trade to want.
+- **Caveat:** one seed and 200 tiles. Differences of 1–3 points are a trend, not a settled result.
 
 ```bash
 python -m planspot.train_walls --data <floorplancad> --variant lora --steps 1500 --batch 8

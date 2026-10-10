@@ -1,0 +1,14 @@
+{
+  "variant": "frozen",
+  "trainable_params": 253793,
+  "steps": 1500,
+  "batch": 8,
+  "train_tiles": 1500,
+  "eval_tiles": 200,
+  "train_minutes": 13.0,
+  "f1_tol2px": 0.7312985369833399,
+  "precision": 0.735212130720557,
+  "recall": 0.7976465507597577,
+  "cldice": 0.6636277590882065,
+  "component_count_error": 31.015
+}
